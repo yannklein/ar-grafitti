@@ -31,16 +31,3 @@ var iFrameElement = function ( id, x, y, z, rx, ry, rz, h, w) {
 };
 
 export {initCSS3DRenderer, iFrameElement}
-
-
-// <iframe width="560" height="315"
-// src="https://www.youtube.com/embed/PmrWwYTlAVQ"
-// frameborder="0"
-// allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-// allowfullscreen></iframe>
-
-// <iframe width="560" height="315"
-// src="https://www.youtube.com/embed/pm-R3dvrUZg"
-// frameborder="0"
-// allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-// allowfullscreen></iframe>

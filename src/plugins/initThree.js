@@ -22,42 +22,6 @@ const addBox = (x, y, z, size, myScene) => {
   myScene.add(mesh);
 };
 
-const addHoleInTheWall = (x, y, z, rx, ry, rz, size, myScene) => {
-  var hole = new THREE.Group();
-  // the inside of the hole
-  let geometryHole = new THREE.CylinderGeometry(1, 1, 1, 32,1, true);
-  let loader = new THREE.TextureLoader();
-  let texture = loader.load( 'images/bricks.jpg' );
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4,2);
-  let materialHole = new THREE.MeshBasicMaterial({
-    transparent : true,
-    map: texture,
-    side: THREE.BackSide
-  });
-  var holeInside = new THREE.Mesh( geometryHole, materialHole );
-  holeInside.position.y = -0.6;
-  hole.position.set(x, y, z);
-  hole.rotation.set(rx, ry, rz);
-  hole.scale.multiplyScalar(size);
-  hole.add( holeInside );
-
-
-  // the invisibility cloak (ring; has circular hole)
-  let geometryCloak = new THREE.RingGeometry(1, 10, 32);
-  let materialCloak = new THREE.MeshBasicMaterial({
-    map: loader.load( 'images/bricks.jpg' ), // for testing placement
-    colorWrite: true
-  });
-  var holeCloak = new THREE.Mesh( geometryCloak, materialCloak );
-  holeCloak.rotation.x = -Math.PI/2;
-  holeCloak.position.y -= 0.1;
-  hole.add(holeCloak);
-
-  myScene.add(hole);
-};
-
 const addYoutubeVideo = (id, x, y, z, rx, ry, rz, h, w, myScene) => {
   let youtubeObject = new iFrameElement(id, x, y, z, rx, ry, rz, h, w);
   myScene.add(youtubeObject);
@@ -138,7 +102,6 @@ const init = (withAR = false, withCSS3D = false) => {
 
   // Control for non AR
   if (!withAR) {
-
     if (withCSS3D) {
       controlsCSS3D = new OrbitControls( camera, rendererCSS3D.domElement );
       controlsCSS3D.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
@@ -148,7 +111,6 @@ const init = (withAR = false, withCSS3D = false) => {
       controlsCSS3D.maxDistance = 500;
       controlsCSS3D.maxPolarAngle = Math.PI / 2;
     }
-
     controls = new OrbitControls( camera, renderer.domElement );
     controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
     controls.dampingFactor = 0.25;
@@ -156,7 +118,6 @@ const init = (withAR = false, withCSS3D = false) => {
     controls.minDistance = 0;
     controls.maxDistance = 500;
     controls.maxPolarAngle = Math.PI / 2;
-
   }
 
   // Add objects to the ThreeJS scene
@@ -171,14 +132,12 @@ const init = (withAR = false, withCSS3D = false) => {
     let sceneAR = initARJS(scene, camera, onRenderFcts, renderer);
     // addBox(1, sceneAR);
     if (withCSS3D) {
-      addHoleInTheWall(0, 0, 0, 0, 0, 0, 1, sceneAR);
       addYoutubeVideo(youtubeParams, 0, -300, 0, -Math.PI / 2, 0, 0, heightStr, widthStr, sceneAR);
     }
   } else {
     addBox(0, 30, 0, 20, scene);
     groundObject(200, scene);
     if (withCSS3D) {
-      addHoleInTheWall(0, 5, 0, Math.PI / 2, 0, 0, 5, scene);
       addYoutubeVideo(youtubeParams, 0, 0, -50, 0, 0, 0, heightStr, widthStr, scene);
     }
   }
@@ -206,8 +165,6 @@ const init = (withAR = false, withCSS3D = false) => {
       onRenderFct(deltaMsec/1000, nowMsec/1000);
     });
   });
-
 };
-
 
 export { init };
