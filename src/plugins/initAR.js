@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import {THREEx, WebAR } from '../vendor/ar.js';
+
+let artoolkitMarker;
+
 //Initialisation of AR JS
 const initARJS = (scene, camera, onRenderFcts, renderer) => {
 
@@ -56,7 +59,7 @@ const initARJS = (scene, camera, onRenderFcts, renderer) => {
   ////////////////////////////////////////////////////////////////////////////////
   var markerRoot = new THREE.Group;
   scene.add(markerRoot);
-  var artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+  artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
     //type: 'barcode',
     //barcodeValue: 'https://magicstickr.github.io/video-base/index.html',
     type : 'pattern',
@@ -71,9 +74,12 @@ const initARJS = (scene, camera, onRenderFcts, renderer) => {
     lerpQuaternion: 0.3,
     lerpScale: 1,
   });
+
+  window.isMarkerVisible = false;
+
   onRenderFcts.push(function(delta){
     smoothedControls.update(markerRoot);
-    // console.log(artoolkitMarker.object3d.visible);
+    //console.log(artoolkitMarker.object3d.visible);
     let elements = document.querySelectorAll(".manual-display");
     elements.forEach( (element) => {
       if (element){
@@ -89,4 +95,8 @@ const initARJS = (scene, camera, onRenderFcts, renderer) => {
   return smoothedRoot;
 }
 
-export { initARJS };
+const isMarkerVisible = () => {
+  return artoolkitMarker.object3d.visible;
+}
+
+export { initARJS, isMarkerVisible };

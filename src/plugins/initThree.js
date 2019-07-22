@@ -1,10 +1,18 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { initARJS } from './initAR';
-import {initCSS3DRenderer, iFrameElement} from './initCSS3DRenderer';
+import { initARJS, isMarkerVisible } from './initAR';
+import { uploadFile } from './initCloudinary';
+// import {initCSS3DRenderer, iFrameElement} from './initCSS3DRenderer';
 
 let mouse = new THREE.Vector2();
 let controls, controlsCSS3D;
+let camera;
+
+var mousePos = null;
+var strokeColor = [200,200,200];
+var texture_canvas, texture_context, texture;
+let uploadFrequency = 1000;
+let isUploadPremitted = true;
 
 const onWindowResize = () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -22,26 +30,6 @@ const addBox = (x, y, z, size, myScene) => {
   myScene.add(mesh);
 };
 
-const addYoutubeVideo = (id, x, y, z, rx, ry, rz, h, w, myScene) => {
-  let youtubeObject = new iFrameElement(id, x, y, z, rx, ry, rz, h, w);
-  myScene.add(youtubeObject);
-  // Creating mesh to mix WebGL and CSS3D objects
-  var material = new THREE.MeshPhongMaterial({
-                opacity : 0.2,
-                color : new THREE.Color('black'),
-                blending: THREE.NoBlending,
-                side  : THREE.DoubleSide,
-            });
-  // create the plane mesh
-  var geometry = new THREE.PlaneGeometry(h,w);
-  var planeMesh = new THREE.Mesh( geometry, material );
-
-  planeMesh.position.copy(youtubeObject.position);
-  planeMesh.rotation.copy(youtubeObject.rotation);
-  // add it to the WebGL scene
-  myScene.add(planeMesh);
-};
-
 const groundObject = (size, myScene) => {
   let geometry = new THREE.PlaneGeometry( size, size, 1 );
   const texture = new THREE.TextureLoader().load('images/table.jpg');
@@ -50,6 +38,83 @@ const groundObject = (size, myScene) => {
   ground.rotation.x = - Math.PI / 2;
   ground.position.y = -0.01;
   myScene.add(ground);
+};
+
+const graffitiUpdate = (scene, camera) => {
+  var raycaster = new THREE.Raycaster();
+  //Graffiti update
+  raycaster.setFromCamera( mouse, camera );
+  var meshIntersects = raycaster.intersectObjects( [scene.getObjectByName("graffiti")] );
+
+  if ( meshIntersects.length > 0) {
+    var x = meshIntersects[0].uv.x * texture_canvas.width;
+    var y = (1 - meshIntersects[0].uv.y) * texture_canvas.height;
+
+    var size = 1;
+    if (mousePos == null){
+      mousePos = {x, y};
+    }else{
+      texture_context.beginPath();
+      texture_context.moveTo(mousePos.x, mousePos.y);
+      texture_context.lineTo(x, y);
+      strokeColor[0] += Math.round(Math.random()*100-50);
+      if(strokeColor[0]<0){strokeColor[0]=0;}
+      if(strokeColor[0]>255){strokeColor[0]=255;}
+      strokeColor[1] += Math.round(Math.random()*100-50);
+      if(strokeColor[1]<0){strokeColor[1]=0;}
+      if(strokeColor[1]>255){strokeColor[1]=255;}
+      strokeColor[2] += Math.round(Math.random()*100-50);
+      if(strokeColor[2]<0){strokeColor[2]=0;}
+      if(strokeColor[2]>255){strokeColor[2]=255;}
+      texture_context.strokeStyle = 'rgb('+ strokeColor[0] +', '+ strokeColor[1] + ','+ strokeColor[2] +')';
+      texture_context.lineWidth = 1;
+      texture_context.stroke();
+      mousePos = {x, y};
+      var dataURL = texture_canvas.toDataURL();
+      if (isUploadPremitted) {
+        isUploadPremitted = false;
+        setTimeout(() => {
+          console.log(dataURL);
+          console.log("image uploaded");
+          isUploadPremitted = true;
+          uploadFile(dataURL);
+        }, uploadFrequency);
+      }
+    }
+    texture.needsUpdate = true;
+  }
+};
+
+const graffitiCreate = (myScene) => {
+  //Customizable texture
+  let canvasSize = 256;
+  texture_canvas = document.createElement ('canvas');
+  texture_canvas.width = canvasSize;
+  texture_canvas.height = canvasSize;
+  texture_context = texture_canvas.getContext ('2d');
+  texture_context.rect (0, 0, texture_canvas.width, texture_canvas.height);
+  // texture_context.fillStyle = 'rgba(255, 255, 255, 1)';
+  // texture_context.fill ();
+  var img = new Image();
+  img.onload = function() {
+    texture_context.drawImage(img, 0, 0);
+  };
+  img.crossOrigin = "anonymous";
+  img.src = 'https://res.cloudinary.com/yanninthesky/image/upload/grafitti.png';
+
+
+  texture = new THREE.Texture (texture_canvas);
+  texture.needsUpdate = true;
+  //texture.flipY = false;
+
+  let mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry( canvasSize, canvasSize ),
+        new THREE.MeshBasicMaterial( { map: texture } )
+    );
+  mesh.rotation.x = - Math.PI / 2;
+  mesh.name = "graffiti";
+  mesh.scale.multiplyScalar(0.02);
+  myScene.add( mesh );
 };
 
 const init = (withAR = false, withCSS3D = false) => {
@@ -89,7 +154,7 @@ const init = (withAR = false, withCSS3D = false) => {
   let scene = new THREE.Scene();
 
   // Create a camera
-  let camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 1500 );
+  camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 1500 );
   if (!withAR) {
     camera.position.z = 100;
     camera.position.y = 10;
@@ -100,51 +165,28 @@ const init = (withAR = false, withCSS3D = false) => {
   light.intensity = 0.7;
   scene.add( light );
 
-  // Control for non AR
-  if (!withAR) {
-    if (withCSS3D) {
-      controlsCSS3D = new OrbitControls( camera, rendererCSS3D.domElement );
-      controlsCSS3D.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-      controlsCSS3D.dampingFactor = 0.25;
-      controlsCSS3D.screenSpacePanning = false;
-      controlsCSS3D.minDistance = 0;
-      controlsCSS3D.maxDistance = 500;
-      controlsCSS3D.maxPolarAngle = Math.PI / 2;
-    }
-    controls = new OrbitControls( camera, renderer.domElement );
-    controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-    controls.dampingFactor = 0.25;
-    controls.screenSpacePanning = false;
-    controls.minDistance = 0;
-    controls.maxDistance = 500;
-    controls.maxPolarAngle = Math.PI / 2;
-  }
-
   // Add objects to the ThreeJS scene
-  let heightStr = (560).toString();
-  let widthStr = (315).toString();
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const youtubeParams = urlParams.get('ytid');
-  console.log(`Youtube video ID: ${youtubeParams}`);
-
   if (withAR) {
     let sceneAR = initARJS(scene, camera, onRenderFcts, renderer);
     // addBox(1, sceneAR);
+    graffitiCreate(sceneAR);
     if (withCSS3D) {
-      addYoutubeVideo(youtubeParams, 0, -300, 0, -Math.PI / 2, 0, 0, heightStr, widthStr, sceneAR);
     }
   } else {
     addBox(0, 30, 0, 20, scene);
+    graffitiCreate(scene);
     groundObject(200, scene);
     if (withCSS3D) {
-      addYoutubeVideo(youtubeParams, 0, 0, -50, 0, 0, 0, heightStr, widthStr, scene);
     }
   }
 
   // render the scene
   onRenderFcts.push(function(){
     if (withCSS3D) { rendererCSS3D.render( scene, camera ); }
+    // console.log(`Marker visibility: ${isMarkerVisible()}`);
+    if(mouse.down && isMarkerVisible()){
+        graffitiUpdate(scene, camera);
+    }
     renderer.render( scene, camera );
   });
 
@@ -153,9 +195,7 @@ const init = (withAR = false, withCSS3D = false) => {
   requestAnimationFrame(function animate(nowMsec){
     // keep looping
     requestAnimationFrame( animate );
-    if (!withAR) {
-      controls.update();
-    }
+
     // measure time
     lastTimeMsec  = lastTimeMsec || nowMsec-1000/60;
     var deltaMsec = Math.min(200, nowMsec - lastTimeMsec);
@@ -165,6 +205,38 @@ const init = (withAR = false, withCSS3D = false) => {
       onRenderFct(deltaMsec/1000, nowMsec/1000);
     });
   });
+
+  function onDocumentTouchStart( event ) {
+    event.clientX = event.touches[0].clientX;
+    event.clientY = event.touches[0].clientY;
+
+    mouse.x = ( ( event.clientX - renderer.domElement.offsetLeft ) / renderer.domElement.clientWidth ) * 2 - 1;
+    mouse.y = - ( ( event.clientY - renderer.domElement.offsetTop ) / renderer.domElement.clientHeight ) * 2 + 1;
+    mouse.down = true;
+  };
+
+
+  function onDocumentTouchEnd( event ) {
+    mouse.down = false;
+    mousePos = null;
+  };
+
+  function onDocumentMouseDown( event ) {
+    mouse.x = ( ( event.clientX - renderer.domElement.offsetLeft ) / renderer.domElement.clientWidth ) * 2 - 1;
+    mouse.y = - ( ( event.clientY - renderer.domElement.offsetTop ) / renderer.domElement.clientHeight ) * 2 + 1;
+    mouse.down = (event.buttons != 0);
+    if(!mouse.down){
+      mousePos = null;
+    }
+  };
+
+  document.addEventListener( 'mousedown', onDocumentMouseDown );
+  document.addEventListener( 'mouseup', onDocumentMouseDown );
+  document.addEventListener ('mousemove', onDocumentMouseDown );
+
+  document.addEventListener( 'touchstart', onDocumentTouchStart );
+  document.addEventListener ('touchend', onDocumentTouchEnd );
+  document.addEventListener ('touchmove', onDocumentTouchStart );
 };
 
 export { init };
