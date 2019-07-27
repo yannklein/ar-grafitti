@@ -77,7 +77,7 @@ const graffitiUpdate = (scene, camera) => {
           console.log(dataURL);
           console.log("image uploaded");
           isUploadPremitted = true;
-          uploadFile(dataURL);
+          uploadFile(dataURL, document.getElementById("inputSecret").value);
         }, uploadFrequency);
       }
     }
