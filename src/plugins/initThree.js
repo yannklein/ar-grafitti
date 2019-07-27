@@ -93,14 +93,14 @@ const graffitiCreate = (myScene) => {
   texture_canvas.height = canvasSize;
   texture_context = texture_canvas.getContext ('2d');
   texture_context.rect (0, 0, texture_canvas.width, texture_canvas.height);
-  texture_context.fillStyle = 'rgba(255, 255, 255, 0)';
-  texture_context.fill ();
-//   var img = new Image();
-//   img.onload = function() {
-//     texture_context.drawImage(img, 0, 0);
-//   };
-//   img.crossOrigin = "anonymous";
-//   img.src = 'https://res.cloudinary.com/yanninthesky/image/upload/grafitti.png';
+  // texture_context.fillStyle = 'rgba(255, 255, 255, 0)';
+  // texture_context.fill ();
+  var img = new Image();
+  img.onload = function() {
+    texture_context.drawImage(img, 0, 0);
+  };
+  img.crossOrigin = "anonymous";
+  img.src = 'https://res.cloudinary.com/yanninthesky/image/upload/grafitti.png';
 
 
   texture = new THREE.Texture (texture_canvas);
