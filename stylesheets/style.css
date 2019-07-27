@@ -1,6 +1,21 @@
 body {
   background-color: whitesmoke;
 }
+
+html {
+    position: fixed;
+}
+
+body {
+    position: fixed;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+#canvas {
+    position: static; /* fixed or static */
+}
+
 .app {
   display: flex;
   height: 100vh;
