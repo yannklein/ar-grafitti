@@ -23,6 +23,7 @@ const initARJS = (scene, camera, onRenderFcts, renderer) => {
     onResize();
   });
   function onResize(){
+    renderer.setSize(window.innerWidth, window.innerHeight);
     arToolkitSource.onResizeElement()
     arToolkitSource.copyElementSizeTo(renderer.domElement)
     if( arToolkitContext.arController !== null ){

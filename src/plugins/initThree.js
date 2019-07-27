@@ -47,7 +47,7 @@ const graffitiUpdate = (scene, camera) => {
   var meshIntersects = raycaster.intersectObjects( [scene.getObjectByName("graffiti")] );
 
   if ( meshIntersects.length > 0) {
-    var x = meshIntersects[0].uv.x * texture_canvas.width;
+    var x = (meshIntersects[0].uv.x * texture_canvas.width);
     var y = (1 - meshIntersects[0].uv.y) * texture_canvas.height;
 
     var size = 1;
