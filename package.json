@@ -1,9 +1,9 @@
 {
-  "name": "ar-base",
+  "name": "ar-grafitti",
   "version": "1.0.0",
-  "description": "Base build for Yann's AR experiments",
+  "description": "Create virtual grafitti using Web Augmented Reality",
   "main": "index.js",
-  "repository": "",
+  "repository": "git@github.com:yannklein/ar-grafitti.git",
   "author": "yannklein",
   "license": "UNLICENSED",
   "devDependencies": {

@@ -25,7 +25,6 @@ const generateSignature = (publicId, secret, now) => {
 };
 
 const uploadFile = (image, secret) => {
-  debugger
   const now = Date.now() / 1000 || 0;
   const mySignature = generateSignature(myPublicId, secret, now);
   const url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
