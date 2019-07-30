@@ -1,76 +1,75 @@
 import * as THREE from 'three';
-import {THREEx, WebAR } from '../vendor/ar.js';
+import { THREEx, WebAR } from '../vendor/ar';
 
 let artoolkitMarker;
 
-//Initialisation of AR JS
+// Initialisation of AR JS
 const initARJS = (scene, camera, onRenderFcts, renderer) => {
-
-  ////////////////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////////////
   //          handle arToolkitSource
-  ////////////////////////////////////////////////////////////////////////////////
-  var arToolkitSource = new THREEx.ArToolkitSource({
+  // //////////////////////////////////////////////////////////////////////////////
+  const arToolkitSource = new THREEx.ArToolkitSource({
     // to read from the webcam
-    sourceType : 'webcam'
+    sourceType: 'webcam'
   });
 
-  arToolkitSource.init(function onReady(){
+  const onResize = () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    arToolkitSource.onResizeElement();
+    arToolkitSource.copyElementSizeTo(renderer.domElement);
+    if (arToolkitContext.arController !== null) {
+      arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas);
+    }
+  };
+
+  // //////////////////////////////////////////////////////////////////////////////
+  //          initialize arToolkitContext
+  // //////////////////////////////////////////////////////////////////////////////
+
+  // create atToolkitContext
+  let arToolkitContext = new THREEx.ArToolkitContext({
+    cameraParametersUrl: `${THREEx.ArToolkitContext.baseURL}../data/data/camera_para.dat`,
+    detectionMode: 'mono',
+    maxDetectionRate: 30,
+    canvasWidth: 80 * 3,
+    canvasHeight: 60 * 3,
+  });
+  // initialize it
+  arToolkitContext.init(() => {
+    // copy projection matrix to camera
+    camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+  });
+
+  // update artoolkit on every frame
+  onRenderFcts.push(() => {
+    if (arToolkitSource.ready === false) return;
+    arToolkitContext.update(arToolkitSource.domElement);
+  });
+  arToolkitSource.init(() => {
     onResize();
   });
 
   // handle resize
-  window.addEventListener('resize', function(){
+  window.addEventListener('resize', () => {
     onResize();
   });
-  function onResize(){
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    arToolkitSource.onResizeElement()
-    arToolkitSource.copyElementSizeTo(renderer.domElement)
-    if( arToolkitContext.arController !== null ){
-      arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas)
-    }
-  };
-  ////////////////////////////////////////////////////////////////////////////////
-  //          initialize arToolkitContext
-  ////////////////////////////////////////////////////////////////////////////////
 
-
-  // create atToolkitContext
-  var arToolkitContext = new THREEx.ArToolkitContext({
-    cameraParametersUrl: THREEx.ArToolkitContext.baseURL + '../data/data/camera_para.dat',
-    detectionMode: 'mono',
-    maxDetectionRate: 30,
-    canvasWidth: 80*3,
-    canvasHeight: 60*3,
-  });
-  // initialize it
-  arToolkitContext.init(function onCompleted(){
-    // copy projection matrix to camera
-    camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
-  });
-
-  // update artoolkit on every frame
-  onRenderFcts.push(function(){
-    if( arToolkitSource.ready === false ) return
-    arToolkitContext.update( arToolkitSource.domElement )
-  });
-
-  ////////////////////////////////////////////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////////////////
   //          Create a ArMarkerControls
-  ////////////////////////////////////////////////////////////////////////////////
-  var markerRoot = new THREE.Group;
+  // //////////////////////////////////////////////////////////////////////////////
+  const markerRoot = new THREE.Group();
   scene.add(markerRoot);
   artoolkitMarker = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
-    //type: 'barcode',
-    //barcodeValue: 'https://magicstickr.github.io/video-base/index.html',
-    type : 'pattern',
-    patternUrl : 'images/marker.patt'
+    // type: 'barcode',
+    // barcodeValue: 'https://magicstickr.github.io/video-base/index.html',
+    type: 'pattern',
+    patternUrl: 'images/marker.patt'
   });
 
   // build a smoothedControls
-  var smoothedRoot = new THREE.Group();
+  const smoothedRoot = new THREE.Group();
   scene.add(smoothedRoot);
-  var smoothedControls = new THREEx.ArSmoothedControls(smoothedRoot, {
+  const smoothedControls = new THREEx.ArSmoothedControls(smoothedRoot, {
     lerpPosition: 0.4,
     lerpQuaternion: 0.3,
     lerpScale: 1,
@@ -78,12 +77,12 @@ const initARJS = (scene, camera, onRenderFcts, renderer) => {
 
   window.isMarkerVisible = false;
 
-  onRenderFcts.push(function(delta){
+  onRenderFcts.push(() => {
     smoothedControls.update(markerRoot);
-    //console.log(artoolkitMarker.object3d.visible);
-    let elements = document.querySelectorAll(".manual-display");
-    elements.forEach( (element) => {
-      if (element){
+    // console.log(artoolkitMarker.object3d.visible);
+    const elements = document.querySelectorAll(".manual-display");
+    elements.forEach((element) => {
+      if (element) {
         if (artoolkitMarker.object3d.visible) {
           element.style.display = "";
         } else {
@@ -94,10 +93,8 @@ const initARJS = (scene, camera, onRenderFcts, renderer) => {
   });
 
   return smoothedRoot;
-}
+};
 
-const isMarkerVisible = () => {
-  return artoolkitMarker.object3d.visible;
-}
+const isMarkerVisible = () => artoolkitMarker.object3d.visible;
 
 export { initARJS, isMarkerVisible };
